@@ -57,8 +57,6 @@ struct wsk_state {
 	struct zwlr_layer_surface_v1 *layer_surface;
 	uint32_t width, height;
 	bool frame_scheduled, dirty;
-	struct pool_buffer buffers[2];
-	struct pool_buffer *current_buffer;
 	struct wsk_output *output, *outputs;
 
 	struct xkb_state *xkb_state;
@@ -171,14 +169,14 @@ static void render_frame(struct wsk_state *state) {
 		wl_surface_commit(state->surface);
 	} else if (height > 0) {
 		// Replay recording into shm and send it off
-		state->current_buffer = get_next_buffer(state->shm,
-				state->buffers, state->width * scale, state->height * scale);
-		if (!state->current_buffer) {
+		struct pool_buffer buffer;
+		if (!create_buffer(state->shm, &buffer, state->width * scale,
+				state->height * scale, WL_SHM_FORMAT_ARGB8888)) {
 			cairo_surface_destroy(recorder);
 			cairo_destroy(cairo);
 			return;
 		}
-		cairo_t *shm = state->current_buffer->cairo;
+		cairo_t *shm = buffer.cairo;
 
 		cairo_save(shm);
 		cairo_set_operator(shm, CAIRO_OPERATOR_CLEAR);
@@ -190,10 +188,11 @@ static void render_frame(struct wsk_state *state) {
 
 		wl_surface_set_buffer_scale(state->surface, scale);
 		wl_surface_attach(state->surface,
-				state->current_buffer->buffer, 0, 0);
+				buffer.buffer, 0, 0);
 		wl_surface_damage_buffer(state->surface, 0, 0,
 				state->width, state->height);
 		wl_surface_commit(state->surface);
+		destroy_buffer(&buffer);
 	}
 }
 
