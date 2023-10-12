@@ -20,6 +20,8 @@
 #include "wlr-layer-shell-unstable-v1-client-protocol.h"
 #include "xdg-output-unstable-v1-client-protocol.h"
 
+static struct pool_buffer buffer;
+
 struct wsk_keypress {
 	xkb_keysym_t sym;
 	char name[128];
@@ -56,7 +58,6 @@ struct wsk_state {
 	struct wl_surface *surface;
 	struct zwlr_layer_surface_v1 *layer_surface;
 	uint32_t width, height;
-	bool frame_scheduled, dirty;
 	struct wsk_output *output, *outputs;
 
 	struct xkb_state *xkb_state;
@@ -169,7 +170,6 @@ static void render_frame(struct wsk_state *state) {
 		wl_surface_commit(state->surface);
 	} else if (height > 0) {
 		// Replay recording into shm and send it off
-		struct pool_buffer buffer;
 		if (!create_buffer(state->shm, &buffer, state->width * scale,
 				state->height * scale, WL_SHM_FORMAT_ARGB8888)) {
 			cairo_surface_destroy(recorder);
@@ -206,9 +206,7 @@ static void set_dirty(struct wsk_state *state) {
 	if (!surface_is_configured(state)) {
 		return;
 	}
-	if (state->frame_scheduled) {
-		state->dirty = true;
-	} else if (state->surface) {
+	if (state->surface) {
 		render_frame(state);
 	}
 }
