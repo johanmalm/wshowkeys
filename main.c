@@ -196,7 +196,16 @@ static void render_frame(struct wsk_state *state) {
 	}
 }
 
+bool
+surface_is_configured(struct wsk_state *state)
+{
+	return (state->width && state->height);
+}
+
 static void set_dirty(struct wsk_state *state) {
+	if (!surface_is_configured(state)) {
+		return;
+	}
 	if (state->frame_scheduled) {
 		state->dirty = true;
 	} else if (state->surface) {
