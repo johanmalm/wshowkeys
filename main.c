@@ -159,7 +159,8 @@ static void render_frame(struct wsk_state *state) {
 			|| state->width == 0) {
 		// Reconfigure surface
 		if (width == 0 || height == 0) {
-			wl_surface_attach(state->surface, NULL, 0, 0);
+//			wl_surface_attach(state->surface, NULL, 0, 0);
+			;
 		} else {
 			zwlr_layer_surface_v1_set_size(
 					state->layer_surface, width / scale, height / scale);
